@@ -10,7 +10,10 @@ if (WIN32)
 endif (WIN32)
 
 # Main Stuff
-add_executable(${PROJECT_NAME} src/main)
+add_subdirectory(external/ds)
+include_directories(external/ds/src)
+
+add_executable(${PROJECT_NAME} src/main src/window.cpp)
 include_directories(src)
 
 # SDL3 stuff

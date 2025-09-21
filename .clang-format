@@ -1,0 +1,15 @@
+---
+Language: Cpp
+# BasedOnStyle: LLVM
+IndentWidth: 2
+AlignAfterOpenBracket: BlockIndent
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakAfterReturnType: None
+BinPackArguments: true
+BinPackParameters: true
+ReferenceAlignment: Left
+PackConstructorInitializers: NextLine
+PointerAlignment: Left
