@@ -3,7 +3,7 @@
 #include "SDL3_ttf/SDL_ttf.h"
 #include <cstdio>
 
-using namespace sdl_imm;
+using namespace immpp;
 
 class Initializer {
 public:

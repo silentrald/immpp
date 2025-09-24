@@ -2,7 +2,7 @@
 #include "ds/optional.hpp"
 #include <cstdint>
 
-namespace sdl_imm {
+namespace immpp {
 
 using c8 = char;
 using i8 = int8_t;
@@ -71,4 +71,4 @@ template <typename T> using exp_error = ds::expected<T, error_code>;
 using opt_error = ds::optional<error_code>;
 const auto null = ds::null;
 
-} // namespace sdl_imm
+} // namespace immpp

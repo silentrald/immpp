@@ -4,7 +4,7 @@
 #include "SDL3_ttf/SDL_ttf.h"
 #include "ds/vector.hpp"
 
-namespace sdl_imm {
+namespace immpp {
 
 class Window {
 public:
@@ -29,10 +29,8 @@ public:
 
   // === Widgets === //
 
-  [[nodiscard]] bool
-  text_button(rect<f32> dimensions, const c8* text) noexcept;
-  [[nodiscard]] bool
-  text_button(vec2<f32> position, const c8* text) noexcept;
+  [[nodiscard]] bool text_button(rect<f32> dimensions, const c8* text) noexcept;
+  [[nodiscard]] bool text_button(vec2<f32> position, const c8* text) noexcept;
   void rectangle(rect<f32> dimensions, rgba8 color) noexcept;
   void fill_rectangle(rect<f32> dimensions, rgba8 color) noexcept;
 
@@ -57,4 +55,4 @@ private:
   vec2<f32> padding = {4.0F, 4.0F};
 };
 
-} // namespace sdl_imm
+} // namespace immpp

@@ -11,14 +11,14 @@
 
 namespace {
 
-inline void set_color(SDL_Renderer* renderer, sdl_imm::rgba8 color) noexcept {
+inline void set_color(SDL_Renderer* renderer, immpp::rgba8 color) noexcept {
   SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
 // NOTE: Can create a static vector implementation with ds
-inline sdl_imm::i32
-key_index(const ds::vector<sdl_imm::u32>& keys, sdl_imm::u32 key) noexcept {
-  for (sdl_imm::i32 i = 0; i < keys.get_size(); ++i) {
+inline immpp::i32
+key_index(const ds::vector<immpp::u32>& keys, immpp::u32 key) noexcept {
+  for (immpp::i32 i = 0; i < keys.get_size(); ++i) {
     if (keys[i] == key) {
       return i;
     }
@@ -28,8 +28,8 @@ key_index(const ds::vector<sdl_imm::u32>& keys, sdl_imm::u32 key) noexcept {
 }
 
 inline SDL_Texture* create_text_texture(
-    SDL_Renderer* renderer, TTF_Font* font, const sdl_imm::c8* text,
-    sdl_imm::i32 text_length, sdl_imm::rgba8 color
+    SDL_Renderer* renderer, TTF_Font* font, const immpp::c8* text,
+    immpp::i32 text_length, immpp::rgba8 color
 ) noexcept {
   // Draw the text
   SDL_Surface* surface =
@@ -46,7 +46,7 @@ inline SDL_Texture* create_text_texture(
 
 } // namespace
 
-namespace sdl_imm {
+namespace immpp {
 
 Window::Window(Window&& other) noexcept
     : window(other.window), renderer(other.renderer) {
@@ -248,4 +248,4 @@ void Window::fill_rectangle(rect<f32> dimensions, rgba8 color) noexcept {
   SDL_RenderFillRect(this->renderer, (SDL_FRect*)&dimensions);
 }
 
-} // namespace sdl_imm
+} // namespace immpp
