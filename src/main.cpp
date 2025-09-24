@@ -1,33 +1,66 @@
 #include "./window.hpp"
 #include "SDL3/SDL_init.h"
+#include "SDL3_ttf/SDL_ttf.h"
 #include <cstdio>
 
+using namespace sdl_imm;
+
+class Initializer {
+public:
+  Initializer() noexcept = default;
+  Initializer(const Initializer&) = delete;
+  Initializer(Initializer&&) = delete;
+  Initializer& operator=(const Initializer&) = delete;
+  Initializer& operator=(Initializer&&) = delete;
+
+  // NOLINTNEXTLINE
+  [[nodiscard]] opt_error init() const noexcept {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+      // TODO:
+      return opt_error{error_codes::SDL_INIT_ERROR};
+    }
+
+    if (!TTF_Init()) {
+      // TODO:
+      return opt_error{error_codes::SDL_INIT_ERROR};
+    }
+
+    // TODO: Check this return
+    return opt_error{null};
+  }
+
+  ~Initializer() noexcept {
+    TTF_Quit();
+    SDL_Quit();
+  }
+};
+
 int main() noexcept {
-  // Initialization
-  if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-    printf("Unable to init SDL : %s", SDL_GetError());
+  Initializer initializer{};
+  opt_error error = initializer.init();
+  if (error) {
+    printf("Error %d\n", *error);
     return -1;
   }
 
   {
-    sdl_imm::Window window{};
-    sdl_imm::opt_error error = window.init("Hello World");
+    Window window{};
+    error = window.init("Hello World");
     if (error) {
-      // TODO:
       printf("Error %d\n", *error);
+      return *error;
     }
 
-    bool running = true;
-    sdl_imm::rect<sdl_imm::f32> r1{10.0, 10.0, 10.0, 10.0};
-    sdl_imm::rect<sdl_imm::f32> r2{30.0, 30.0, 10.0, 10.0};
-    while (window.start()) {
-      window.draw_rectangle(r1, {0xFF, 0x00, 0x00, 0xFF});
-      window.fill_rectangle(r2, {0x00, 0xFF, 0x00, 0xFF});
-      window.end();
+    while (window.start_render()) {
+      if (window.text_button(vec2<f32>{0.0F, 50.0F}, "Something")) {
+        printf("UwU\n");
+      }
+      if (window.text_button(vec2<f32>{100.0F, 50.0F}, "Asdf")) {
+        printf("UwU\n");
+      }
+      window.end_render();
     }
   }
-
-  SDL_Quit();
 
   return 0;
 }

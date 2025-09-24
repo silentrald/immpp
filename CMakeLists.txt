@@ -36,6 +36,7 @@ add_subdirectory(${SDL3_IMG_DIR})
 
 if (UNIX)
   set(SDL_IMM_LIBRARIES
+    ds
     SDL3::SDL3
     SDL3_ttf-shared
     SDL3_image-shared
@@ -43,6 +44,7 @@ if (UNIX)
   )
 elseif (WIN32)
   set(SDL_IMM_LIBRARIES
+    ds
     SDL3::SDL3
     SDL3_ttf-shared
     SDL3_image-shared

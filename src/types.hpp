@@ -42,6 +42,11 @@ template <typename T> struct rect {
     };
     vec2<T> size;
   };
+
+  bool contains(vec2<T> point) {
+    return point.x >= this->x && point.x <= this->x + this->w &&
+           point.y >= this->y && point.y <= this->y + this->h;
+  }
 };
 
 struct rgba8 {
@@ -52,6 +57,7 @@ struct rgba8 {
 };
 
 // Error
+// NOLINTNEXTLINE
 enum error_codes : i32 {
   OK = 0,
 
@@ -63,5 +69,6 @@ enum error_codes : i32 {
 using error_code = i32;
 template <typename T> using exp_error = ds::expected<T, error_code>;
 using opt_error = ds::optional<error_code>;
+const auto null = ds::null;
 
 } // namespace sdl_imm
