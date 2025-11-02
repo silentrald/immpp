@@ -1,7 +1,8 @@
-#include "./window.hpp"
 #include "SDL3/SDL_init.h"
 #include "SDL3_ttf/SDL_ttf.h"
-#include <cstdio>
+#include "immpp/logger.hpp"
+#include "immpp/size.hpp"
+#include "immpp/window.hpp"
 
 using namespace immpp;
 
@@ -17,12 +18,12 @@ public:
   [[nodiscard]] opt_error init() const noexcept {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
       // TODO:
-      return opt_error{error_codes::SDL_INIT_ERROR};
+      return opt_error{error_codes::SDL_INIT};
     }
 
     if (!TTF_Init()) {
       // TODO:
-      return opt_error{error_codes::SDL_INIT_ERROR};
+      return opt_error{error_codes::SDL_INIT};
     }
 
     // TODO: Check this return
@@ -39,7 +40,7 @@ int main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {
-    printf("Error %d\n", *error);
+    logger::error("Error %d", *error);
     return -1;
   }
 
@@ -47,20 +48,45 @@ int main() noexcept {
     Window window{};
     error = window.init("Hello World");
     if (error) {
-      printf("Error %d\n", *error);
+      logger::error("Error %d", *error);
       return *error;
     }
 
-    while (window.start_render()) {
-      if (window.text_button(vec2<f32>{0.0F, 50.0F}, "Something")) {
-        printf("UwU\n");
+    const i32 widths[]{
+      immpp::size::encode_fixed(100), immpp::size::encode_grow(1)
+    };
+    const i32 heights[]{
+      immpp::size::encode_fixed(100), immpp::size::encode_grow(1)
+    };
+    while (window.start()) {
+      window.start_row(widths, 2);
+      {
+        window.start_column(heights, 2);
+        {
+          if (window.text_button("Quit")) {
+            logger::info("Quiting...");
+            window.quit();
+          }
+          window.text("Sidepanel");
+        }
+        window.end_column();
+
+        window.start_group();
+        window.set_group_offset({-5.0F, 0.0F});
+        window.text("Hi");
+
+        window.set_group_offset({100.0F, 100.0F});
+        window.text("World");
+
+        window.end_group();
       }
-      if (window.text_button(vec2<f32>{100.0F, 50.0F}, "Asdf")) {
-        printf("UwU\n");
-      }
-      window.end_render();
+      window.end_row();
+
+      window.end();
     }
   }
+
+  logger::info("QUIT");
 
   return 0;
 }

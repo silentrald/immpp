@@ -13,7 +13,13 @@ endif (WIN32)
 add_subdirectory(external/ds)
 include_directories(external/ds/src)
 
-add_executable(${PROJECT_NAME} src/main src/window.cpp)
+add_executable(${PROJECT_NAME}
+  src/main.cpp
+  src/immpp/dev_logger.cpp
+  src/immpp/math.cpp
+  src/immpp/size.cpp
+  src/backend/sdl3/window.cpp
+)
 include_directories(src)
 
 # SDL3 stuff
