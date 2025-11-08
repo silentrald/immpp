@@ -37,6 +37,7 @@ struct Input {
 struct State {
   vec2<f32> window_size{};
   ds::vector<rect<f32>> widget_sizes{};
+  rect<f32> limits{};
   bool running = true;
 };
 
@@ -75,8 +76,7 @@ public:
   void end_column() noexcept;
 
   void start_group() noexcept;
-  void set_group_offset(vec2<f32> offset) noexcept;
-  void set_group_rectangle(const rect<f32>& rectangle) noexcept;
+  void add_group(const rect<f32>& rectangle) noexcept;
   void end_group() noexcept;
 
   // === Widgets === //

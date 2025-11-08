@@ -34,18 +34,21 @@ enum error_codes : i32 {
 using error_code = i32;
 template <typename T> using exp_error = ds::expected<T, error_code>;
 using opt_error = ds::optional<error_code>;
-const auto null = ds::null;
 
 template <typename T> struct vec2 {
   T x;
   T y;
 
-  vec2<T> operator+(vec2<T> rhs) const noexcept {
+  [[nodiscard]] vec2<T> operator+(vec2<T> rhs) const noexcept {
     return vec2<T>{.x = this->x + rhs.x, .y = this->y + rhs.y};
   }
 
-  vec2<T> operator-(vec2<T> rhs) const noexcept {
+  [[nodiscard]] vec2<T> operator-(vec2<T> rhs) const noexcept {
     return vec2<T>{.x = this->x - rhs.x, .y = this->y - rhs.y};
+  }
+
+  template <typename T2> [[nodiscard]] vec2<T2> to() const noexcept {
+    return immpp::vec2<T2>{.x = (T2)this->x, .y = (T2)this->y};
   }
 };
 
@@ -76,7 +79,7 @@ template <typename T> struct rect {
     return error_codes::OK;
   }
 
-  bool contains(vec2<T> point) const {
+  bool contains(vec2<T> point) const noexcept {
     return point.x >= this->x && point.x <= this->x + this->w &&
            point.y >= this->y && point.y <= this->y + this->h;
   }

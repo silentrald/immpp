@@ -13,16 +13,9 @@ endif (WIN32)
 add_subdirectory(external/ds)
 include_directories(external/ds/src)
 
-add_executable(${PROJECT_NAME}
-  src/main.cpp
-  src/immpp/dev_logger.cpp
-  src/immpp/math.cpp
-  src/immpp/size.cpp
-  src/backend/sdl3/window.cpp
-)
 include_directories(src)
 
-# SDL3 stuff
+# === SDL3 === #
 set(SDL3_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3)
 set(SDL3_TTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-ttf)
 set(SDL3_IMG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-img)
@@ -31,6 +24,34 @@ add_subdirectory(${SDL3_DIR})
 add_subdirectory(${SDL3_TTF_DIR})
 add_subdirectory(${SDL3_IMG_DIR})
 
+if (UNIX)
+  set(SDL_IMM_LIBRARIES
+    ds
+    SDL3::SDL3
+    SDL3_ttf-shared
+    SDL3_image-shared
+  )
+elseif (WIN32)
+  set(SDL_IMM_LIBRARIES
+    ds
+    SDL3::SDL3
+    SDL3_ttf-shared
+    SDL3_image-shared
+  )
+endif (UNIX)
+
+add_executable(sdl3
+  samples/animation.cpp
+
+  src/immpp/dev_logger.cpp
+  src/immpp/math.cpp
+  src/immpp/size.cpp
+  src/backend/sdl3/initializer.cpp
+  src/backend/sdl3/window.cpp
+)
+target_link_libraries(sdl3 PRIVATE ${SDL_IMM_LIBRARIES})
+
+# === SDL3 === #
 
 # TODO: Unit testing
 # add_subdirectory(external/catch2)
@@ -39,23 +60,3 @@ add_subdirectory(${SDL3_IMG_DIR})
 
 # add_executable(pixel_vector test/vector.cpp)
 # target_link_libraries(pixel_vector PRIVATE Catch2::Catch2WithMain)
-
-if (UNIX)
-  set(SDL_IMM_LIBRARIES
-    ds
-    SDL3::SDL3
-    SDL3_ttf-shared
-    SDL3_image-shared
-    # png
-  )
-elseif (WIN32)
-  set(SDL_IMM_LIBRARIES
-    ds
-    SDL3::SDL3
-    SDL3_ttf-shared
-    SDL3_image-shared
-    # png z
-  )
-endif (UNIX)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL_IMM_LIBRARIES})

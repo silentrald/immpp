@@ -11,29 +11,43 @@
 #include "immpp/logger.hpp"
 #include "immpp/size.hpp"
 #include "immpp/types.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
 namespace {
 
-const immpp::f32 FIT = -0.0F; // 0x8000'0000
-[[nodiscard]] inline bool is_fit(immpp::f32 size) noexcept {
-  return (*(int*)&size) & 0x8000'0000;
-}
-
-// If width/height is set to FIT, then set them to new_width/new_height
-template <typename T>
-inline void apply_fit(
-    immpp::f32& width, immpp::f32& height, T new_width, T new_height
+// TODO: can add alignment logic here
+[[nodiscard]] SDL_FRect calculate_widget_rectangle(
+  immpp::rect<immpp::f32> area,
+  immpp::vec2<immpp::f32> fit_size,
+  immpp::vec2<immpp::f32> max_size
 ) noexcept {
-  if (is_fit(width)) {
-    width = new_width;
-  }
+  SDL_FRect output{
+    // std::round to avoid blurry text
+    .w = fit_size.x,
+    .h = fit_size.y
+  };
 
-  if (is_fit(height)) {
-    height = new_height;
+  immpp::f32 tmp = 0.0F;
+  if (immpp::size::is_type(area.w)) {
+    tmp = immpp::size::is_fit(area.w) ? fit_size.x : max_size.x;
+  } else {
+    tmp = area.w;
   }
+  // std::round to avoid blurry text
+  output.x = std::round(area.x + ((tmp - fit_size.x) / 2.0F));
+
+  if (immpp::size::is_type(area.h)) {
+    tmp = immpp::size::is_fit(area.h) ? fit_size.y : max_size.y;
+  } else {
+    tmp = area.h;
+  }
+  // std::round to avoid blurry text
+  output.y = std::round(area.y + ((tmp - fit_size.y) / 2.0F));
+
+  return output;
 }
 
 inline void set_color(SDL_Renderer* renderer, immpp::rgba8 color) noexcept {
@@ -122,7 +136,7 @@ opt_error Window::init(const c8* title) noexcept {
     return opt_error{error_codes::SDL_BAD_ALLOCATION};
   }
 
-  return opt_error{null};
+  return ds::null;
 }
 
 Window::~Window() noexcept {
@@ -144,6 +158,7 @@ Window::~Window() noexcept {
 
 // === Drawing Stuff === //
 
+// NOLINTNEXTLINE
 bool Window::start() noexcept {
   if (!state.running) {
     return false;
@@ -257,10 +272,7 @@ void Window::start_row(const i32* widths, i32 widths_size) noexcept {
     }
   }
 
-  if (dynamic_width < 0.0F) {
-    logger::warn("Dynamic width computed is negative, setting to 0 instead");
-    dynamic_width = 0.0F;
-  }
+  dynamic_width = std::max(dynamic_width, 0.0F);
 
   if (parts > 0) {
     dynamic_width /= parts;
@@ -311,10 +323,7 @@ void Window::start_column(const i32* heights, i32 heights_size) noexcept {
     }
   }
 
-  if (dynamic_height < 0.0F) {
-    logger::warn("Dynamic height computed is negative, setting to 0 instead");
-    dynamic_height = 0.0F;
-  }
+  dynamic_height = std::max(dynamic_height, 0.0F);
 
   if (parts > 0) {
     dynamic_height /= parts;
@@ -352,33 +361,24 @@ void Window::end_column() noexcept {
 
 void Window::start_group() noexcept {
   // NOTE: Add a fatal so that stacking groups is not allowed
-  const rect<f32>& rectangle = this->state.widget_sizes.back();
+  this->state.limits = this->state.widget_sizes.pop();
+
   auto sdl_rect = SDL_Rect{
-    .x = (i32)rectangle.x,
-    .y = (i32)rectangle.y,
-    .w = (i32)rectangle.w,
-    .h = (i32)rectangle.h
+    .x = (i32)this->state.limits.x,
+    .y = (i32)this->state.limits.y,
+    .w = (i32)this->state.limits.w,
+    .h = (i32)this->state.limits.h
   };
   SDL_SetRenderClipRect(this->renderer, &sdl_rect);
 }
 
-void Window::set_group_offset(vec2<f32> offset) noexcept {
-  const rect<f32>& original = this->state.widget_sizes.back();
-  auto error = this->state.widget_sizes.push(
-      {.position = original.position + offset, .size = {FIT, FIT}}
-  );
-  if (error != error_codes::OK) {
-    logger::fatal("Bad Allocation on widget_sizes");
-    std::abort();
-  }
-}
-
-void Window::set_group_rectangle(const rect<f32>& rectangle) noexcept {
-  const rect<f32>& original = this->state.widget_sizes.back();
+void Window::add_group(const rect<f32>& rectangle) noexcept {
+  const rect<f32>& original = this->state.limits;
   auto error = this->state.widget_sizes.push(
       {.position = original.position + rectangle.position,
        .size = rectangle.size}
   );
+
   if (error != error_codes::OK) {
     logger::fatal("Bad Allocation on widget_sizes");
     std::abort();
@@ -386,29 +386,20 @@ void Window::set_group_rectangle(const rect<f32>& rectangle) noexcept {
 }
 
 void Window::end_group() noexcept {
-  this->state.widget_sizes.pop();
   SDL_SetRenderClipRect(this->renderer, nullptr);
 }
 
 // === Widgets === //
 
 void Window::text(const c8* string) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  const auto rectangle = this->state.widget_sizes.pop();
   i32 text_length = std::strlen(string);
 
   // Compute the rect
   vec2<i32> size{};
   TTF_GetStringSize(this->font, string, text_length, &size.x, &size.y);
 
-  apply_fit(rectangle.w, rectangle.h, size.x, size.y);
-
-  SDL_FRect text_rect{
-    // std::round to avoid blurry text
-    .x = std::round(rectangle.x + ((rectangle.w - size.x) / 2.0F)),
-    .y = std::round(rectangle.y + ((rectangle.h - size.y) / 2.0F)),
-    .w = (f32)size.x,
-    .h = (f32)size.y
-  };
+  auto text_rect = calculate_widget_rectangle(rectangle, size.to<f32>(), this->state.limits.size);
 
   SDL_Texture* texture = create_text_texture(
       this->renderer, this->font, string, text_length,
@@ -419,23 +410,14 @@ void Window::text(const c8* string) noexcept {
 }
 
 bool Window::text_button(const c8* text) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  const auto rectangle = this->state.widget_sizes.pop();
   bool mouseover = rectangle.contains(this->input.mouse.position);
   i32 text_length = std::strlen(text);
 
   // Compute the rect
   vec2<i32> size{};
   TTF_GetStringSize(this->font, text, text_length, &size.x, &size.y);
-
-  apply_fit(rectangle.w, rectangle.h, size.x, size.y);
-
-  SDL_FRect text_rect{
-    // std::round to avoid blurry text
-    .x = std::round(rectangle.x + ((rectangle.w - size.x) / 2.0F)),
-    .y = std::round(rectangle.y + ((rectangle.h - size.y) / 2.0F)),
-    .w = (f32)size.x,
-    .h = (f32)size.y
-  };
+  const auto text_rect = calculate_widget_rectangle(rectangle, size.to<f32>(), this->state.limits.size);
 
   // Draw button background
   const auto background_color =
@@ -457,13 +439,27 @@ bool Window::text_button(const c8* text) noexcept {
 }
 
 void Window::rectangle(rgba8 color) noexcept {
-  const auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = this->state.widget_sizes.pop();
+  if (immpp::size::is_type(rectangle.w)) {
+    rectangle.w = this->state.limits.w;
+  }
+  if (immpp::size::is_type(rectangle.h)) {
+    rectangle.h = this->state.limits.h;
+  }
+
   set_color(this->renderer, color);
   SDL_RenderRect(this->renderer, (SDL_FRect*)&rectangle);
 }
 
 void Window::fill_rectangle(rgba8 color) noexcept {
-  const auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = this->state.widget_sizes.pop();
+  if (immpp::size::is_type(rectangle.w)) {
+    rectangle.w = this->state.limits.w;
+  }
+  if (immpp::size::is_type(rectangle.h)) {
+    rectangle.h = this->state.limits.h;
+  }
+
   set_color(this->renderer, color);
   SDL_RenderFillRect(this->renderer, (SDL_FRect*)&rectangle);
 }
