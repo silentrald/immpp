@@ -34,10 +34,25 @@ struct Input {
   } keyboard;
 };
 
+enum Alignment : u8 {
+  // Horizontal
+  HORIZONTAL_LEFT = 0x00,
+  HORIZONTAL_CENTER = 0x01,
+  HORIZONTAL_RIGHT = 0x02,
+  HORIZONTAL_MASK = 0x03,
+
+  // Vertical
+  VERTICAL_TOP = 0x00,
+  VERTICAL_CENTER = 0x10,
+  VERTICAL_BOTTOM = 0x20,
+  VERTICAL_MASK = 0x30,
+};
+
 struct State {
   vec2<f32> window_size{};
   ds::vector<rect<f32>> widget_sizes{};
   rect<f32> limits{};
+  u8 alignments = HORIZONTAL_LEFT | VERTICAL_TOP;
   bool running = true;
 };
 
@@ -65,7 +80,8 @@ public:
 
   // === Layouts === //
 
-  void set_anchor() noexcept;
+  // Check on Alignment enum for values
+  void set_anchor(u8 alignments) noexcept;
 
   void start_row(const i32* widths, i32 widths_size) noexcept;
   void start_row(const ds::vector<i32>& widths) noexcept;

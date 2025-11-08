@@ -11,7 +11,7 @@ int main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {
-    logger::error("Error %d", *error);
+    logger::error("Error %d\n", *error);
     return -1;
   }
 
@@ -19,8 +19,8 @@ int main() noexcept {
     Window window{};
     error = window.init("Animation");
     if (error) {
-      logger::error("Error %d", *error);
-      return *error;
+      logger::error("Error %d\n", *error);
+      return -1;
     }
 
     const std::array<i32, 2> heights{
@@ -41,7 +41,9 @@ int main() noexcept {
             window.add_group({0.0F, 0.0F, size::GROW_F32, size::GROW_F32});
             window.fill_rectangle({0xff, 0x00, 0x00, 0xff});
             window.add_group({0.0F, 0.0F, size::GROW_F32, size::GROW_F32});
-            window.text("Canvas");
+            if (window.text_button("Canvas")) {
+              logger::info("Canvas pressed");
+            }
           }
           window.end_group();
 

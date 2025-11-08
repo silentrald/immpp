@@ -24,32 +24,36 @@ add_subdirectory(${SDL3_DIR})
 add_subdirectory(${SDL3_TTF_DIR})
 add_subdirectory(${SDL3_IMG_DIR})
 
-if (UNIX)
-  set(SDL_IMM_LIBRARIES
-    ds
-    SDL3::SDL3
-    SDL3_ttf-shared
-    SDL3_image-shared
-  )
-elseif (WIN32)
-  set(SDL_IMM_LIBRARIES
-    ds
-    SDL3::SDL3
-    SDL3_ttf-shared
-    SDL3_image-shared
-  )
-endif (UNIX)
-
-add_executable(sdl3
-  samples/animation.cpp
-
+set(IMMPP_SOURCES
   src/immpp/dev_logger.cpp
   src/immpp/math.cpp
-  src/immpp/size.cpp
+  src/immpp/size.cpp 
+)
+
+set(SDL_LIBRARIES
+  ds
+  SDL3::SDL3
+  SDL3_ttf-shared
+  SDL3_image-shared
+)
+set(SDL_SOURCES
   src/backend/sdl3/initializer.cpp
   src/backend/sdl3/window.cpp
 )
-target_link_libraries(sdl3 PRIVATE ${SDL_IMM_LIBRARIES})
+
+add_executable(sdl3_animation
+  samples/animation.cpp
+  ${IMMPP_SOURCES}
+  ${SDL_SOURCES}
+)
+target_link_libraries(sdl3_animation PRIVATE ${SDL_LIBRARIES})
+
+add_executable(sdl3_anchor
+  samples/anchor.cpp
+  ${IMMPP_SOURCES}
+  ${SDL_SOURCES}
+)
+target_link_libraries(sdl3_anchor PRIVATE ${SDL_LIBRARIES})
 
 # === SDL3 === #
 

@@ -19,13 +19,12 @@
 namespace {
 
 // TODO: can add alignment logic here
-[[nodiscard]] SDL_FRect calculate_widget_rectangle(
-  immpp::rect<immpp::f32> area,
-  immpp::vec2<immpp::f32> fit_size,
-  immpp::vec2<immpp::f32> max_size
+[[nodiscard]] SDL_FRect calculate_text_rectangle(
+    immpp::rect<immpp::f32> area, immpp::vec2<immpp::f32> fit_size,
+    immpp::vec2<immpp::f32> max_size
 ) noexcept {
   SDL_FRect output{
-    // std::round to avoid blurry text
+    // std::trunc to avoid blurry text
     .w = fit_size.x,
     .h = fit_size.y
   };
@@ -36,16 +35,16 @@ namespace {
   } else {
     tmp = area.w;
   }
-  // std::round to avoid blurry text
-  output.x = std::round(area.x + ((tmp - fit_size.x) / 2.0F));
+  // std::trunc to avoid blurry text
+  output.x = std::trunc(area.x + ((tmp - fit_size.x) / 2.0F));
 
   if (immpp::size::is_type(area.h)) {
     tmp = immpp::size::is_fit(area.h) ? fit_size.y : max_size.y;
   } else {
     tmp = area.h;
   }
-  // std::round to avoid blurry text
-  output.y = std::round(area.y + ((tmp - fit_size.y) / 2.0F));
+  // std::trunc to avoid blurry text
+  output.y = std::trunc(area.y + ((tmp - fit_size.y) / 2.0F));
 
   return output;
 }
@@ -257,41 +256,62 @@ void Window::quit() noexcept {
 
 // === Layouts === //
 
+void Window::set_anchor(u8 alignments) noexcept {
+  this->state.alignments = alignments;
+
+  this->state.widget_sizes.clear();
+  static_cast<void>(this->state.widget_sizes.push(
+      {.x = 0.0F, .y = 0.0F, .size = this->state.window_size}
+  ));
+}
+
 void Window::start_row(const i32* widths, i32 widths_size) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
 
   i32 width = 0;
-  f32 dynamic_width = rectangle.w;
   i32 parts = 0;
+  f32 remaining_width = rectangle.w;
+  f32 full_width = rectangle.w;
   for (i32 i = 0; i < widths_size; ++i) {
     width = widths[i];
     if (size::is_grow(width)) {
       parts += size::decode_grow(width);
     } else {
-      dynamic_width -= size::decode_fixed(width);
+      remaining_width -= size::decode_fixed(width);
     }
   }
 
-  dynamic_width = std::max(dynamic_width, 0.0F);
-
+  remaining_width = std::max(remaining_width, 0.0F);
   if (parts > 0) {
-    dynamic_width /= parts;
+    remaining_width /= parts;
   } else {
-    rectangle.w -= dynamic_width;
+    switch (this->state.alignments & Alignment::HORIZONTAL_MASK) {
+    case Alignment::HORIZONTAL_LEFT:
+      full_width -= remaining_width;
+      break;
+
+    case Alignment::HORIZONTAL_CENTER:
+      full_width = (remaining_width / 2.0F) + (rectangle.w - remaining_width);
+      break;
+
+    default: // Alignment::HORIZONTAL_RIGHT:
+      break;
+    }
   }
 
   rect<f32> new_rect{.y = rectangle.y, .h = rectangle.h};
   error_code error = error_codes::OK;
+
   for (i32 i = widths_size - 1; i > -1; --i) {
     width = widths[i];
     if (size::is_grow(width)) {
-      new_rect.w = dynamic_width * size::decode_grow(width);
+      new_rect.w = remaining_width * size::decode_grow(width);
     } else {
       new_rect.w = size::decode_fixed(width);
     }
 
-    rectangle.w -= new_rect.w;
-    new_rect.x = rectangle.x + rectangle.w;
+    full_width -= new_rect.w;
+    new_rect.x = rectangle.x + full_width;
     error = this->state.widget_sizes.push(new_rect);
     if (error != error_codes::OK) {
       logger::fatal("Bad Allocation on widget_sizes");
@@ -312,37 +332,52 @@ void Window::start_column(const i32* heights, i32 heights_size) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
 
   i32 height = 0;
-  f32 dynamic_height = rectangle.h;
   i32 parts = 0;
+  f32 remaining_height = rectangle.h;
+  f32 full_height = rectangle.h;
+
   for (i32 i = 0; i < heights_size; ++i) {
     height = heights[i];
     if (size::is_grow(height)) {
       parts += size::decode_grow(height);
     } else {
-      dynamic_height -= size::decode_fixed(height);
+      remaining_height -= size::decode_fixed(height);
     }
   }
 
-  dynamic_height = std::max(dynamic_height, 0.0F);
+  remaining_height = std::max(remaining_height, 0.0F);
 
   if (parts > 0) {
-    dynamic_height /= parts;
+    remaining_height /= parts;
   } else {
-    rectangle.h -= dynamic_height;
+    switch (this->state.alignments & Alignment::VERTICAL_MASK) {
+    case Alignment::VERTICAL_TOP:
+      full_height -= remaining_height;
+      break;
+
+    case Alignment::VERTICAL_CENTER:
+      full_height =
+          (remaining_height / 2.0F) + (rectangle.h - remaining_height);
+      break;
+
+    default: // Alignment::VERTICAL_BOT:
+      break;
+    }
   }
 
   rect<f32> new_rect{.x = rectangle.x, .w = rectangle.w};
   error_code error = error_codes::OK;
+
   for (i32 i = heights_size - 1; i > -1; --i) {
     height = heights[i];
     if (size::is_grow(height)) {
-      new_rect.h = dynamic_height * size::decode_grow(height);
+      new_rect.h = remaining_height * size::decode_grow(height);
     } else {
       new_rect.h = size::decode_fixed(height);
     }
 
-    rectangle.h -= new_rect.h;
-    new_rect.y = rectangle.y + rectangle.h;
+    full_height -= new_rect.h;
+    new_rect.y = rectangle.y + full_height;
     error = this->state.widget_sizes.push(new_rect);
     if (error != error_codes::OK) {
       logger::fatal("Bad Allocation on widget_sizes");
@@ -399,7 +434,9 @@ void Window::text(const c8* string) noexcept {
   vec2<i32> size{};
   TTF_GetStringSize(this->font, string, text_length, &size.x, &size.y);
 
-  auto text_rect = calculate_widget_rectangle(rectangle, size.to<f32>(), this->state.limits.size);
+  auto text_rect = calculate_text_rectangle(
+      rectangle, size.to<f32>(), this->state.limits.size
+  );
 
   SDL_Texture* texture = create_text_texture(
       this->renderer, this->font, string, text_length,
@@ -410,22 +447,33 @@ void Window::text(const c8* string) noexcept {
 }
 
 bool Window::text_button(const c8* text) noexcept {
-  const auto rectangle = this->state.widget_sizes.pop();
-  bool mouseover = rectangle.contains(this->input.mouse.position);
+  auto rectangle = this->state.widget_sizes.pop();
   i32 text_length = std::strlen(text);
 
   // Compute the rect
   vec2<i32> size{};
   TTF_GetStringSize(this->font, text, text_length, &size.x, &size.y);
-  const auto text_rect = calculate_widget_rectangle(rectangle, size.to<f32>(), this->state.limits.size);
+  const auto text_rect = calculate_text_rectangle(
+      rectangle, size.to<f32>(), this->state.limits.size
+  );
+  rectangle.x = std::trunc(rectangle.x);
+  rectangle.y = std::trunc(rectangle.y);
+  if (size::is_type(rectangle.w)) {
+    rectangle.w = this->state.limits.w;
+  }
+  if (size::is_type(rectangle.h)) {
+    rectangle.h = this->state.limits.h;
+  }
 
+  bool mouseover = rectangle.contains(this->input.mouse.position);
   // Draw button background
-  const auto background_color =
-      mouseover ? this->theme.foreground_color : this->theme.background_color;
   const auto foreground_color =
       mouseover ? this->theme.background_color : this->theme.foreground_color;
-  set_color(this->renderer, background_color);
-  SDL_RenderFillRect(this->renderer, (SDL_FRect*)&rectangle);
+
+  if (mouseover) {
+    set_color(this->renderer, this->theme.foreground_color);
+    SDL_RenderFillRect(this->renderer, (SDL_FRect*)&rectangle);
+  }
   set_color(this->renderer, foreground_color);
   SDL_RenderRect(this->renderer, (SDL_FRect*)&rectangle);
 
@@ -440,6 +488,9 @@ bool Window::text_button(const c8* text) noexcept {
 
 void Window::rectangle(rgba8 color) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
+
+  rectangle.x = std::trunc(rectangle.x);
+  rectangle.y = std::trunc(rectangle.y);
   if (immpp::size::is_type(rectangle.w)) {
     rectangle.w = this->state.limits.w;
   }
@@ -453,6 +504,9 @@ void Window::rectangle(rgba8 color) noexcept {
 
 void Window::fill_rectangle(rgba8 color) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
+
+  rectangle.x = std::trunc(rectangle.x);
+  rectangle.y = std::trunc(rectangle.y);
   if (immpp::size::is_type(rectangle.w)) {
     rectangle.w = this->state.limits.w;
   }
