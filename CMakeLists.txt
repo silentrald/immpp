@@ -2,32 +2,17 @@ cmake_minimum_required(VERSION 3.5)
 
 project(immpp VERSION 1.0.0)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
-set(CMAKE_CXX_STANDARD 17)
-
-if (WIN32)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
-endif (WIN32)
+option(IMMPP_SAMPLES "IMMPP Example" OFF)
 
 # Main Stuff
 add_subdirectory(external/ds)
 include_directories(external/ds/src)
-
 include_directories(src)
-
-# === SDL3 === #
-set(SDL3_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3)
-set(SDL3_TTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-ttf)
-set(SDL3_IMG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-img)
-set(SDL_TEST OFF)
-add_subdirectory(${SDL3_DIR})
-add_subdirectory(${SDL3_TTF_DIR})
-add_subdirectory(${SDL3_IMG_DIR})
 
 set(IMMPP_SOURCES
   src/immpp/dev_logger.cpp
   src/immpp/math.cpp
-  src/immpp/size.cpp 
+  src/immpp/size.cpp
 )
 
 set(SDL_LIBRARIES
@@ -41,21 +26,40 @@ set(SDL_SOURCES
   src/backend/sdl3/window.cpp
 )
 
-add_executable(sdl3_animation
-  samples/animation.cpp
+add_library(${PROJECT_NAME}
   ${IMMPP_SOURCES}
   ${SDL_SOURCES}
 )
-target_link_libraries(sdl3_animation PRIVATE ${SDL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL_LIBRARIES})
 
-add_executable(sdl3_anchor
-  samples/anchor.cpp
-  ${IMMPP_SOURCES}
-  ${SDL_SOURCES}
-)
-target_link_libraries(sdl3_anchor PRIVATE ${SDL_LIBRARIES})
 
-# === SDL3 === #
+if (IMMPP_SAMPLES)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+  set(CMAKE_CXX_STANDARD 17)
+
+  # === SDL3 === #
+  set(SDL3_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3)
+  set(SDL3_TTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-ttf)
+  set(SDL3_IMG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3-img)
+  set(SDL_TEST OFF)
+  add_subdirectory(${SDL3_DIR})
+  add_subdirectory(${SDL3_TTF_DIR})
+  add_subdirectory(${SDL3_IMG_DIR})
+
+  add_executable(sdl3_animation
+    samples/animation.cpp
+    ${IMMPP_SOURCES}
+    ${SDL_SOURCES}
+  )
+  target_link_libraries(sdl3_animation PRIVATE ${SDL_LIBRARIES})
+
+  add_executable(sdl3_anchor
+    samples/anchor.cpp
+    ${IMMPP_SOURCES}
+    ${SDL_SOURCES}
+  )
+  target_link_libraries(sdl3_anchor PRIVATE ${SDL_LIBRARIES})
+endif (IMMPP_SAMPLES)
 
 # TODO: Unit testing
 # add_subdirectory(external/catch2)
