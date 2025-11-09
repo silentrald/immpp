@@ -215,11 +215,18 @@ bool Window::start() noexcept {
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
       if (event.button.button == SDL_BUTTON_LEFT) {
         this->input.mouse.left = MouseState::PRESSED;
+        this->input.mouse.click.left_position.x = event.motion.x;
+        this->input.mouse.click.left_position.y = event.motion.y;
       } else if (event.button.button == SDL_BUTTON_RIGHT) {
         this->input.mouse.right = MouseState::PRESSED;
+        this->input.mouse.click.right_position.x = event.motion.x;
+        this->input.mouse.click.right_position.y = event.motion.y;
       } else if (event.button.button == SDL_BUTTON_MIDDLE) {
         this->input.mouse.middle = MouseState::PRESSED;
+        this->input.mouse.click.middle_position.x = event.motion.x;
+        this->input.mouse.click.middle_position.y = event.motion.y;
       }
+
       break;
 
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -521,6 +528,7 @@ bool Window::text_button(const c8* text) noexcept {
   );
   normalize_rectangle(rectangle, this->state.limits);
 
+  bool last_clicked = rectangle.contains(this->input.mouse.click.left_position);
   bool mouseover = rectangle.contains(this->input.mouse.position);
   // Draw button background
   const auto foreground_color =
@@ -539,7 +547,8 @@ bool Window::text_button(const c8* text) noexcept {
   SDL_RenderTexture(this->renderer, texture, nullptr, &text_rect);
   SDL_DestroyTexture(texture);
 
-  return mouseover && this->input.mouse.left == MouseState::RELEASED;
+  return last_clicked && mouseover &&
+         this->input.mouse.left == MouseState::RELEASED;
 }
 
 void Window::image(const c8* path) noexcept {
@@ -566,6 +575,7 @@ bool Window::image_button(const c8* path) noexcept {
   auto rectangle = pop_widget_size(this->state.widget_sizes);
   normalize_rectangle(rectangle, this->state.limits);
 
+  bool last_clicked = rectangle.contains(this->input.mouse.click.left_position);
   bool mouseover = rectangle.contains(this->input.mouse.position);
 
   SDL_Surface* surface = IMG_Load(path);
@@ -578,7 +588,8 @@ bool Window::image_button(const c8* path) noexcept {
   SDL_DestroySurface(surface);
   if (texture == nullptr) {
     logger::warn("Could not create texture for image '%s'", path);
-    return mouseover && this->input.mouse.left == MouseState::RELEASED;
+    return last_clicked && mouseover &&
+           this->input.mouse.left == MouseState::RELEASED;
   }
 
   if (mouseover) {
@@ -588,7 +599,8 @@ bool Window::image_button(const c8* path) noexcept {
 
   SDL_RenderTexture(this->renderer, texture, nullptr, (SDL_FRect*)&rectangle);
   SDL_DestroyTexture(texture);
-  return mouseover && this->input.mouse.left == MouseState::RELEASED;
+  return last_clicked && mouseover &&
+         this->input.mouse.left == MouseState::RELEASED;
 }
 
 void Window::rectangle(rgba8 color) noexcept {

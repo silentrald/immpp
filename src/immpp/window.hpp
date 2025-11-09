@@ -24,6 +24,13 @@ struct Input {
   struct Mouse {
     vec2<f32> position{};
     vec2<f32> scroll{};
+
+    struct Click {
+      vec2<f32> left_position{};
+      vec2<f32> right_position{};
+      vec2<f32> middle_position{};
+    } click;
+
     MouseState left = MouseState::UP;
     MouseState right = MouseState::UP;
     MouseState middle = MouseState::UP;
