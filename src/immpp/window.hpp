@@ -63,7 +63,7 @@ enum class Widget : u8 {
 };
 
 struct State {
-  vec2<f32> window_size{};
+  vec2<f32> window_size{640.0F, 480.0F};
   ds::vector<rect<f32>> widget_sizes{};
   ds::vector<Widget> widgets{};
   rect<f32> limits{};
@@ -91,7 +91,11 @@ public:
   [[nodiscard]] opt_error init(const c8* title) noexcept;
   ~Window() noexcept;
 
+  // === Configuration === //
+
   void set_fps(u32 FPS) noexcept;
+  [[nodiscard]] opt_error set_font(const c8* path, i32 size) noexcept;
+  void set_window_size(vec2<i32> size) noexcept;
 
   // === Main Loop === //
 

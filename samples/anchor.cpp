@@ -28,7 +28,9 @@ void to_char(std::array<c8, 10>& string, i32 num) {
   string[i] = '\0';
 }
 
-void render_id(Window& window, i32& id, std::array<c8, 10>& string, rgba8 color) {
+void render_id(
+    Window& window, i32& id, std::array<c8, 10>& string, rgba8 color
+) {
   to_char(string, ++id);
   window.start_group();
   {
@@ -43,7 +45,9 @@ void render_id(Window& window, i32& id, std::array<c8, 10>& string, rgba8 color)
   window.end_group();
 }
 
-void render_group(Window& window, i32& id, std::array<c8, 10>& string, rgba8 color) {
+void render_group(
+    Window& window, i32& id, std::array<c8, 10>& string, rgba8 color
+) {
   window.start_column(sizes.data(), sizes.size());
   for (i32 i = 0; i < 2; ++i) {
     window.start_row(sizes.data(), sizes.size());
@@ -62,29 +66,32 @@ i32 main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {
-    logger::error("Error %d\n", *error);
+    logger::error("Initializer error: %d\n", *error);
     return -1;
   }
 
   {
     Window window{};
-    error = window.init("Anchor");
+    error = window.init("Animation");
     if (error) {
-      logger::error("Error %d\n", *error);
+      logger::error("Window error: %d\n", *error);
+      return -1;
+    }
+
+    // Configuration
+    error = window.set_font("../assets/fonts/PixeloidSans.ttf", 16);
+    if (error) {
+      logger::error("Font error: %d\n", *error);
       return -1;
     }
 
     i32 id = 0;
     std::array<c8, 10> string{};
     std::array<rgba8, 9> colors{
-      rgba8{0x80, 0xff, 0x80, 0xff},
-      rgba8{0x00, 0xff, 0x00, 0xff},
-      rgba8{0x00, 0xff, 0xff, 0xff},
-      rgba8{0xff, 0x00, 0x00, 0xff},
-      rgba8{0xff, 0x00, 0xff, 0xff},
-      rgba8{0xff, 0xff, 0x00, 0xff},
-      rgba8{0x80, 0x80, 0x80, 0xff},
-      rgba8{0xff, 0x80, 0x80, 0xff},
+      rgba8{0x80, 0xff, 0x80, 0xff}, rgba8{0x00, 0xff, 0x00, 0xff},
+      rgba8{0x00, 0xff, 0xff, 0xff}, rgba8{0xff, 0x00, 0x00, 0xff},
+      rgba8{0xff, 0x00, 0xff, 0xff}, rgba8{0xff, 0xff, 0x00, 0xff},
+      rgba8{0x80, 0x80, 0x80, 0xff}, rgba8{0xff, 0x80, 0x80, 0xff},
       rgba8{0x80, 0x80, 0xff, 0xff},
     };
 
@@ -99,13 +106,19 @@ i32 main() noexcept {
       window.set_anchor(Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_TOP);
       render_group(window, id, string, colors[2]);
 
-      window.set_anchor(Alignment::HORIZONTAL_LEFT | Alignment::VERTICAL_CENTER);
+      window.set_anchor(
+          Alignment::HORIZONTAL_LEFT | Alignment::VERTICAL_CENTER
+      );
       render_group(window, id, string, colors[3]);
 
-      window.set_anchor(Alignment::HORIZONTAL_CENTER | Alignment::VERTICAL_CENTER);
+      window.set_anchor(
+          Alignment::HORIZONTAL_CENTER | Alignment::VERTICAL_CENTER
+      );
       render_group(window, id, string, colors[4]);
 
-      window.set_anchor(Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_CENTER);
+      window.set_anchor(
+          Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_CENTER
+      );
       render_group(window, id, string, colors[5]);
 
       window.set_anchor(
