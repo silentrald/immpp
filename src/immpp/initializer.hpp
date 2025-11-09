@@ -14,8 +14,11 @@ public:
   Initializer& operator=(Initializer&&) = delete;
 
   // NOLINTNEXTLINE
-  [[nodiscard]] opt_error init() const noexcept;
+  [[nodiscard]] opt_error init() noexcept;
   ~Initializer() noexcept;
+
+private:
+  bool initialized = false;
 };
 
 } // namespace immpp

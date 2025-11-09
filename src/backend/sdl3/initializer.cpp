@@ -6,8 +6,13 @@
 namespace immpp {
 
 // NOLINTNEXTLINE
-opt_error Initializer::init() const noexcept {
- if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+opt_error Initializer::init() noexcept {
+  if (this->initialized) {
+    return ds::null;
+  }
+  this->initialized = false;
+
+  if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
     return opt_error{error_codes::SDL_INIT};
   }
 
@@ -19,6 +24,10 @@ opt_error Initializer::init() const noexcept {
 }
 
 Initializer::~Initializer() noexcept {
+  if (!this->initialized) {
+    return;
+  }
+
   TTF_Quit();
   SDL_Quit();
 }
