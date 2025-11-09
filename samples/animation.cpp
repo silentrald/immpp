@@ -11,7 +11,7 @@ i32 main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {
-    logger::error("Error %d\n", *error);
+    logger::error("Initializer error: %d\n", *error);
     return -1;
   }
 
@@ -19,10 +19,19 @@ i32 main() noexcept {
     Window window{};
     error = window.init("Animation");
     if (error) {
-      logger::error("Error %d\n", *error);
+      logger::error("Window error: %d\n", *error);
       return -1;
     }
+
+    // Configuration
+    error = window.set_font("../assets/fonts/PixeloidSans.ttf", 16);
+    if (error) {
+      logger::error("Font error: %d\n", *error);
+      return -1;
+    }
+
     window.set_fps(120);
+    window.set_window_size({800, 800});
 
     const std::array<i32, 2> heights{
       size::encode_grow(1), size::encode_fixed(100)

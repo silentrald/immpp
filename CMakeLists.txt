@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(immpp VERSION 1.0.1)
+project(immpp VERSION 1.0.2)
 
 option(IMMPP_SAMPLES "IMMPP Example" OFF)
 

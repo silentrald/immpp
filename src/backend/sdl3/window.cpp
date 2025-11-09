@@ -153,19 +153,16 @@ Window& Window::operator=(Window&& rhs) noexcept {
 }
 
 opt_error Window::init(const c8* title) noexcept {
-  this->state.window_size = {640.0F, 480.0F};
-  this->window = SDL_CreateWindow(title, 640, 480, SDL_WINDOW_RESIZABLE);
+  this->window = SDL_CreateWindow(
+      title, this->state.window_size.x, this->state.window_size.y,
+      SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED
+  );
   if (this->window == nullptr) {
     return opt_error{error_codes::SDL_INIT};
   }
 
   this->renderer = SDL_CreateRenderer(this->window, nullptr);
   if (this->renderer == nullptr) {
-    return opt_error{error_codes::SDL_INIT};
-  }
-
-  this->font = TTF_OpenFont("../assets/fonts/PixeloidSans.ttf", 16);
-  if (this->font == nullptr) {
     return opt_error{error_codes::SDL_INIT};
   }
 
@@ -196,6 +193,23 @@ Window::~Window() noexcept {
 
 void Window::set_fps(u32 FPS) noexcept {
   this->state.seconds_per_frame = 1000 / FPS;
+}
+
+opt_error Window::set_font(const c8* path, i32 size) noexcept {
+  this->font = TTF_OpenFont(path, 16);
+  if (this->font == nullptr) {
+    return opt_error{error_codes::SDL_INIT};
+  }
+
+  return ds::null;
+}
+
+void Window::set_window_size(vec2<i32> size) noexcept {
+  this->state.window_size = size.to<f32>();
+
+  if (this->window != nullptr) {
+    SDL_SetWindowSize(this->window, size.x, size.y);
+  }
 }
 
 // === Drawing Stuff === //
