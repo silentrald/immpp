@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 
 #define CHECK_LAYOUT(widget_id, widget_string)                                 \
   if (!this->state.widgets.is_empty() &&                                       \
@@ -193,6 +194,10 @@ Window::~Window() noexcept {
   }
 }
 
+void Window::set_fps(u32 FPS) noexcept {
+  this->state.seconds_per_frame = 1000 / FPS;
+}
+
 // === Drawing Stuff === //
 
 // NOLINTNEXTLINE
@@ -200,6 +205,9 @@ bool Window::start() noexcept {
   if (!state.running) {
     return false;
   }
+
+  // Frame limiter time start
+  this->state.time = SDL_GetTicks();
 
   SDL_Event event{};
   while (SDL_PollEvent(&event)) {
@@ -293,7 +301,10 @@ void Window::end() noexcept {
   update_mouse_state(this->input.mouse.right);
   update_mouse_state(this->input.mouse.middle);
 
-  // TODO: Add frame limiter here
+  u64 delta = SDL_GetTicks() - this->state.time;
+  if (delta < this->state.seconds_per_frame) {
+    SDL_Delay(this->state.seconds_per_frame - delta);
+  }
 }
 
 void Window::quit() noexcept {

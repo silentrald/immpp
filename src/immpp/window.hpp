@@ -68,6 +68,9 @@ struct State {
   ds::vector<Widget> widgets{};
   rect<f32> limits{};
 
+  u64 time = 0;
+  u32 seconds_per_frame = 1000 / 60;
+  // u32 FPS = 60;
   u8 alignments = HORIZONTAL_LEFT | VERTICAL_TOP;
   bool running = true;
 };
@@ -87,6 +90,8 @@ public:
    **/
   [[nodiscard]] opt_error init(const c8* title) noexcept;
   ~Window() noexcept;
+
+  void set_fps(u32 FPS) noexcept;
 
   // === Main Loop === //
 

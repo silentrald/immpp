@@ -22,6 +22,7 @@ int main() noexcept {
       logger::error("Error %d\n", *error);
       return -1;
     }
+    window.set_fps(120);
 
     const std::array<i32, 2> heights{
       size::encode_grow(1), size::encode_fixed(100)
