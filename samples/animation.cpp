@@ -27,14 +27,28 @@ int main() noexcept {
       size::encode_grow(1), size::encode_fixed(100)
     };
     const std::array<i32, 3> widths{
-      size::encode_fixed(50), size::encode_grow(1), size::encode_fixed(100)
+      size::encode_fixed(32), size::encode_grow(1), size::encode_fixed(100)
     };
     while (window.start()) {
       window.start_column(heights.data(), heights.size());
       {
         window.start_row(widths.data(), widths.size());
         {
-          window.text("Tools");
+          window.start_group();
+          {
+            for (i32 i = 0; i < 5; ++i) {
+              window.add_group({0.0F, 32.0F * i, 32.0F, 32.0F});
+              if (window.image_button("../assets/images/sample.png")) {
+                logger::info("Tool %d pressed", i);
+              }
+            }
+
+            window.add_group({0.0F, 32.0F * 5, size::GROW_F32, size::GROW_F32});
+            if (window.image_button("../assets/images/sample.png")) {
+              logger::info("Tool %d pressed", 5);
+            }
+          }
+          window.end_group();
 
           window.start_group();
           {

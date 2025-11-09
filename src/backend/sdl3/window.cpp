@@ -5,7 +5,9 @@
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_surface.h"
 #include "SDL3/SDL_video.h"
+#include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
+#include "ds/optional.hpp"
 #include "ds/types.hpp"
 #include "ds/vector.hpp"
 #include "immpp/logger.hpp"
@@ -47,6 +49,20 @@ namespace {
   output.y = std::trunc(area.y + ((tmp - fit_size.y) / 2.0F));
 
   return output;
+}
+
+void normalize_rectangle(
+  immpp::rect<immpp::f32>& rectangle,
+  const immpp::rect<immpp::f32>& limits
+) noexcept {
+  rectangle.x = std::trunc(rectangle.x);
+  rectangle.y = std::trunc(rectangle.y);
+  if (immpp::size::is_type(rectangle.w)) {
+    rectangle.w = limits.w - std::max(0.0F, rectangle.x - limits.x);
+  }
+  if (immpp::size::is_type(rectangle.h)) {
+    rectangle.h = limits.h - std::max(0.0F, rectangle.y - limits.y);
+  }
 }
 
 inline void set_color(SDL_Renderer* renderer, immpp::rgba8 color) noexcept {
@@ -456,14 +472,7 @@ bool Window::text_button(const c8* text) noexcept {
   const auto text_rect = calculate_text_rectangle(
       rectangle, size.to<f32>(), this->state.limits.size
   );
-  rectangle.x = std::trunc(rectangle.x);
-  rectangle.y = std::trunc(rectangle.y);
-  if (size::is_type(rectangle.w)) {
-    rectangle.w = this->state.limits.w;
-  }
-  if (size::is_type(rectangle.h)) {
-    rectangle.h = this->state.limits.h;
-  }
+  normalize_rectangle(rectangle, this->state.limits);
 
   bool mouseover = rectangle.contains(this->input.mouse.position);
   // Draw button background
@@ -486,17 +495,58 @@ bool Window::text_button(const c8* text) noexcept {
   return mouseover && this->input.mouse.left == MouseState::RELEASED;
 }
 
+void Window::image(const c8* path) noexcept {
+  auto rectangle = this->state.widget_sizes.pop();
+  normalize_rectangle(rectangle, this->state.limits);
+
+  SDL_Surface* surface = IMG_Load(path);
+  if (surface == nullptr) {
+    logger::warn("Could not create surface for image '%s'", path);
+    return;
+  }
+
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+  SDL_DestroySurface(surface);
+  if (texture == nullptr) {
+    logger::warn("Could not create texture for image '%s'", path);
+  }
+
+  SDL_RenderTexture(this->renderer, texture, nullptr, (SDL_FRect*)&rectangle);
+  SDL_DestroyTexture(texture);
+}
+
+bool Window::image_button(const c8* path) noexcept {
+  auto rectangle = this->state.widget_sizes.pop();
+  normalize_rectangle(rectangle, this->state.limits);
+
+  bool mouseover = rectangle.contains(this->input.mouse.position);
+
+  SDL_Surface* surface = IMG_Load(path);
+  if (surface == nullptr) {
+    logger::warn("Could not create surface for image '%s'", path);
+    return mouseover && this->input.mouse.left == MouseState::RELEASED;
+  }
+
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+  SDL_DestroySurface(surface);
+  if (texture == nullptr) {
+    logger::warn("Could not create texture for image '%s'", path);
+    return mouseover && this->input.mouse.left == MouseState::RELEASED;
+  }
+
+  if (mouseover) {
+    set_color(this->renderer, this->theme.foreground_color);
+    SDL_RenderFillRect(this->renderer, (SDL_FRect*)&rectangle);
+  }
+
+  SDL_RenderTexture(this->renderer, texture, nullptr, (SDL_FRect*)&rectangle);
+  SDL_DestroyTexture(texture);
+  return mouseover && this->input.mouse.left == MouseState::RELEASED;
+}
+
 void Window::rectangle(rgba8 color) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
-
-  rectangle.x = std::trunc(rectangle.x);
-  rectangle.y = std::trunc(rectangle.y);
-  if (immpp::size::is_type(rectangle.w)) {
-    rectangle.w = this->state.limits.w;
-  }
-  if (immpp::size::is_type(rectangle.h)) {
-    rectangle.h = this->state.limits.h;
-  }
+  normalize_rectangle(rectangle, this->state.limits);
 
   set_color(this->renderer, color);
   SDL_RenderRect(this->renderer, (SDL_FRect*)&rectangle);
@@ -504,15 +554,7 @@ void Window::rectangle(rgba8 color) noexcept {
 
 void Window::fill_rectangle(rgba8 color) noexcept {
   auto rectangle = this->state.widget_sizes.pop();
-
-  rectangle.x = std::trunc(rectangle.x);
-  rectangle.y = std::trunc(rectangle.y);
-  if (immpp::size::is_type(rectangle.w)) {
-    rectangle.w = this->state.limits.w;
-  }
-  if (immpp::size::is_type(rectangle.h)) {
-    rectangle.h = this->state.limits.h;
-  }
+  normalize_rectangle(rectangle, this->state.limits);
 
   set_color(this->renderer, color);
   SDL_RenderFillRect(this->renderer, (SDL_FRect*)&rectangle);

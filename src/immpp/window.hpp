@@ -99,6 +99,8 @@ public:
 
   void text(const c8* string) noexcept;
   [[nodiscard]] bool text_button(const c8* text) noexcept;
+  void image(const c8* path) noexcept;
+  [[nodiscard]] bool image_button(const c8* path) noexcept;
   void rectangle(rgba8 color) noexcept;
   void fill_rectangle(rgba8 color) noexcept;
 
