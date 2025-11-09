@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(immpp VERSION 1.0.0)
+project(immpp VERSION 1.0.1)
 
 option(IMMPP_SAMPLES "IMMPP Example" OFF)
 
 # Main Stuff
-add_subdirectory(external/ds)
-include_directories(external/ds/src)
-include_directories(src)
-
 set(IMMPP_SOURCES
   src/immpp/dev_logger.cpp
   src/immpp/math.cpp
@@ -30,12 +26,15 @@ add_library(${PROJECT_NAME}
   ${IMMPP_SOURCES}
   ${SDL_SOURCES}
 )
-target_link_libraries(${PROJECT_NAME} PUBLIC ${SDL_LIBRARIES})
-
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PUBLIC src)
 
 if (IMMPP_SAMPLES)
   set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
   set(CMAKE_CXX_STANDARD 17)
+
+  include_directories(src)
+  add_subdirectory(external/ds)
 
   # === SDL3 === #
   set(SDL3_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl3)
@@ -61,10 +60,3 @@ if (IMMPP_SAMPLES)
   target_link_libraries(sdl3_anchor PRIVATE ${SDL_LIBRARIES})
 endif (IMMPP_SAMPLES)
 
-# TODO: Unit testing
-# add_subdirectory(external/catch2)
-# add_executable(pixel_draw test/draw.cpp src/math.cpp ${draw_srcs})
-# target_link_libraries(pixel_draw PRIVATE Catch2::Catch2WithMain)
-
-# add_executable(pixel_vector test/vector.cpp)
-# target_link_libraries(pixel_vector PRIVATE Catch2::Catch2WithMain)

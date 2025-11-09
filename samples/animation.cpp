@@ -7,7 +7,7 @@
 
 using namespace immpp;
 
-int main() noexcept {
+i32 main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {

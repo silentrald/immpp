@@ -58,7 +58,7 @@ void render_group(Window& window, i32& id, std::array<c8, 10>& string, rgba8 col
 
 } // namespace
 
-int main() noexcept {
+i32 main() noexcept {
   Initializer initializer{};
   opt_error error = initializer.init();
   if (error) {
