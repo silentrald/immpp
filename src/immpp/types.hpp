@@ -99,4 +99,28 @@ struct rgba8 {
 
 } // namespace immpp
 
+// NOLINTNEXTLINE
+#define IMMPP_GET_MACRO(_1, _2, NAME, ...) NAME
+
+// NOLINTNEXTLINE
+#define IMMPP_TRY(...) IMMPP_GET_MACRO(__VA_ARGS__, IMMPP_TRY2, IMMPP_TRY1)(__VA_ARGS__)
+
+// NOLINTNEXTLINE
+#define IMMPP_TRY1(expression)                                                    \
+  {                                                                            \
+    auto error = expression;                                                   \
+    if (ds::is_error(error)) {                                                 \
+      return std::move(error);                                                 \
+    }                                                                          \
+  }
+
+// NOLINTNEXTLINE
+#define IMMPP_TRY2(expression, converter)                                         \
+  {                                                                            \
+    auto error = expression;                                                   \
+    if (ds::is_error(error)) {                                                 \
+      return std::move(converter(error));                                      \
+    }                                                                          \
+  }
+
 #endif

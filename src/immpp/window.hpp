@@ -48,10 +48,19 @@ enum Alignment : u8 {
   VERTICAL_MASK = 0x30,
 };
 
+enum class Widget : u8 {
+  NONE = 0,
+  ROW,
+  COLUMN,
+  GROUP,
+};
+
 struct State {
   vec2<f32> window_size{};
   ds::vector<rect<f32>> widget_sizes{};
+  ds::vector<Widget> widgets{};
   rect<f32> limits{};
+
   u8 alignments = HORIZONTAL_LEFT | VERTICAL_TOP;
   bool running = true;
 };

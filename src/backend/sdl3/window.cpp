@@ -18,7 +18,30 @@
 #include <cstdlib>
 #include <cstring>
 
+#define CHECK_LAYOUT(widget_id, widget_string)                                 \
+  if (!this->state.widgets.is_empty() &&                                       \
+      this->state.widgets.back() == widget_id) {                               \
+    logger::warn(                                                              \
+        "Stacking the same layout (%s) is not allowed", widget_string          \
+    );                                                                         \
+    return;                                                                    \
+  }                                                                            \
+  if (this->state.widgets.push(widget_id) != error_codes::OK) {                \
+    logger::fatal("Bad Allocation on widgets");                                \
+    std::abort();                                                              \
+  }
+
 namespace {
+
+[[nodiscard]] immpp::rect<immpp::f32>
+pop_widget_size(ds::vector<immpp::rect<immpp::f32>>& widget_sizes) noexcept {
+  if (widget_sizes.is_empty()) {
+    immpp::logger::fatal("No available widget sizes");
+    std::abort();
+  }
+
+  return widget_sizes.pop();
+}
 
 // TODO: can add alignment logic here
 [[nodiscard]] SDL_FRect calculate_text_rectangle(
@@ -52,8 +75,7 @@ namespace {
 }
 
 void normalize_rectangle(
-  immpp::rect<immpp::f32>& rectangle,
-  const immpp::rect<immpp::f32>& limits
+    immpp::rect<immpp::f32>& rectangle, const immpp::rect<immpp::f32>& limits
 ) noexcept {
   rectangle.x = std::trunc(rectangle.x);
   rectangle.y = std::trunc(rectangle.y);
@@ -245,6 +267,7 @@ bool Window::start() noexcept {
 
   // Update variable values
   this->state.widget_sizes.clear();
+  this->state.widgets.clear();
   static_cast<void>(this->state.widget_sizes.push(
       {.x = 0.0F, .y = 0.0F, .size = this->state.window_size}
   ));
@@ -282,7 +305,13 @@ void Window::set_anchor(u8 alignments) noexcept {
 }
 
 void Window::start_row(const i32* widths, i32 widths_size) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  CHECK_LAYOUT(Widget::ROW, "row");
+
+  if (this->state.widget_sizes.is_empty()) {
+    logger::fatal("No available widget sizes");
+    std::abort();
+  }
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
 
   i32 width = 0;
   i32 parts = 0;
@@ -341,11 +370,15 @@ void Window::start_row(const ds::vector<i32>& widths) noexcept {
 }
 
 void Window::end_row() noexcept {
-  // TODO:
+  if (!this->state.widgets.is_empty() &&
+      this->state.widgets.back() == Widget::ROW) {
+    this->state.widgets.pop();
+  }
 }
 
 void Window::start_column(const i32* heights, i32 heights_size) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  CHECK_LAYOUT(Widget::COLUMN, "column");
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
 
   i32 height = 0;
   i32 parts = 0;
@@ -407,12 +440,16 @@ void Window::start_column(const ds::vector<i32>& heights) noexcept {
 }
 
 void Window::end_column() noexcept {
-  // TODO:
+  if (!this->state.widgets.is_empty() &&
+      this->state.widgets.back() == Widget::COLUMN) {
+    this->state.widgets.pop();
+  }
 }
 
 void Window::start_group() noexcept {
-  // NOTE: Add a fatal so that stacking groups is not allowed
-  this->state.limits = this->state.widget_sizes.pop();
+  CHECK_LAYOUT(Widget::GROUP, "group");
+
+  this->state.limits = pop_widget_size(this->state.widget_sizes);
 
   auto sdl_rect = SDL_Rect{
     .x = (i32)this->state.limits.x,
@@ -424,6 +461,10 @@ void Window::start_group() noexcept {
 }
 
 void Window::add_group(const rect<f32>& rectangle) noexcept {
+  if (this->state.widgets.back() != Widget::GROUP) {
+    return;
+  }
+
   const rect<f32>& original = this->state.limits;
   auto error = this->state.widget_sizes.push(
       {.position = original.position + rectangle.position,
@@ -437,13 +478,19 @@ void Window::add_group(const rect<f32>& rectangle) noexcept {
 }
 
 void Window::end_group() noexcept {
+  if (!this->state.widgets.is_empty() &&
+      this->state.widgets.back() != Widget::GROUP) {
+    return;
+  }
+  this->state.widgets.pop();
+
   SDL_SetRenderClipRect(this->renderer, nullptr);
 }
 
 // === Widgets === //
 
 void Window::text(const c8* string) noexcept {
-  const auto rectangle = this->state.widget_sizes.pop();
+  const auto rectangle = pop_widget_size(this->state.widget_sizes);
   i32 text_length = std::strlen(string);
 
   // Compute the rect
@@ -463,7 +510,7 @@ void Window::text(const c8* string) noexcept {
 }
 
 bool Window::text_button(const c8* text) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
   i32 text_length = std::strlen(text);
 
   // Compute the rect
@@ -496,7 +543,7 @@ bool Window::text_button(const c8* text) noexcept {
 }
 
 void Window::image(const c8* path) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
   normalize_rectangle(rectangle, this->state.limits);
 
   SDL_Surface* surface = IMG_Load(path);
@@ -516,7 +563,7 @@ void Window::image(const c8* path) noexcept {
 }
 
 bool Window::image_button(const c8* path) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
   normalize_rectangle(rectangle, this->state.limits);
 
   bool mouseover = rectangle.contains(this->input.mouse.position);
@@ -545,7 +592,7 @@ bool Window::image_button(const c8* path) noexcept {
 }
 
 void Window::rectangle(rgba8 color) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
   normalize_rectangle(rectangle, this->state.limits);
 
   set_color(this->renderer, color);
@@ -553,7 +600,7 @@ void Window::rectangle(rgba8 color) noexcept {
 }
 
 void Window::fill_rectangle(rgba8 color) noexcept {
-  auto rectangle = this->state.widget_sizes.pop();
+  auto rectangle = pop_widget_size(this->state.widget_sizes);
   normalize_rectangle(rectangle, this->state.limits);
 
   set_color(this->renderer, color);
@@ -561,3 +608,5 @@ void Window::fill_rectangle(rgba8 color) noexcept {
 }
 
 } // namespace immpp
+
+#undef CHECK_LAYOUT
