@@ -10,6 +10,8 @@ AllowShortFunctionsOnASingleLine: Empty
 AlwaysBreakAfterReturnType: None
 BinPackArguments: true
 BinPackParameters: true
+BracedInitializerIndentWidth: 2
+EnumTrailingComma: Insert
 ReferenceAlignment: Left
 PackConstructorInitializers: NextLine
 PointerAlignment: Left
