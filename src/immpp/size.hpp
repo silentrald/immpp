@@ -30,7 +30,7 @@ const f32 GROW_F32 = hex_to_float{0xA000'0000}.f;
 
 [[nodiscard]] bool is_type(immpp::f32 size) noexcept;
 [[nodiscard]] bool is_fit(immpp::f32 size) noexcept;
-[[nodiscard]] bool is_stretch(immpp::f32 size) noexcept;
+[[nodiscard]] bool is_grow(immpp::f32 size) noexcept;
 
 } // namespace immpp::size
 

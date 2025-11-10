@@ -441,7 +441,7 @@ void Window::start_column(const i32* heights, i32 heights_size) noexcept {
           (remaining_height / 2.0F) + (rectangle.h - remaining_height);
       break;
 
-    default: // Alignment::VERTICAL_BOT:
+    default: // Alignment::VERTICAL_BOTTOM:
       break;
     }
   }
@@ -478,10 +478,29 @@ void Window::end_column() noexcept {
   }
 }
 
-void Window::start_group() noexcept {
+void Window::start_group(vec2<i32> size) noexcept {
+  assert(
+      !size::is_fit(size.x) && !size::is_fit(size.y) &&
+      "Group width/height cannot be fixed"
+  );
   CHECK_LAYOUT(Widget::GROUP, "group");
 
   this->state.limits = pop_widget_size(this->state.widget_sizes);
+  if (!size::is_grow(size.x)) {
+    this->state.limits.w = size.x;
+  }
+  if (!size::is_grow(size.y)) {
+    this->state.limits.h = size.y;
+  }
+
+  if (this->state.widgets.get_size() == 1) {
+    this->state.limits.x =
+        (this->state.alignments & Alignment::HORIZONTAL_MASK) * 0.5F *
+        (this->state.window_size.x - this->state.limits.w);
+    this->state.limits.y =
+        ((this->state.alignments & Alignment::VERTICAL_MASK) >> 4) * 0.5F *
+        (this->state.window_size.y - this->state.limits.h);
+  }
 
   auto sdl_rect = SDL_Rect{
     .x = (i32)this->state.limits.x,
