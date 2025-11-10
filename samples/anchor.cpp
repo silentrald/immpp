@@ -10,10 +10,6 @@ using namespace immpp;
 namespace {
 
 const rect<f32> grow_rectangle{0.0F, 0.0F, size::GROW_F32, size::GROW_F32};
-const std::array<i32, 2> sizes{
-  size::encode_fixed(100),
-  size::encode_fixed(50),
-};
 
 void to_char(std::array<c8, 10>& string, i32 num) {
   i32 i = 0;
@@ -28,36 +24,26 @@ void to_char(std::array<c8, 10>& string, i32 num) {
   string[i] = '\0';
 }
 
-void render_id(
+void render_group(
     Window& window, i32& id, std::array<c8, 10>& string, rgba8 color
 ) {
-  to_char(string, ++id);
-  window.start_group();
+  window.start_group({size::encode_fixed(100), size::encode_fixed(100)});
   {
+    // Render Background
+    window.add_group({0.0F, 0.0F, size::GROW_F32, size::GROW_F32});
+    window.fill_rectangle(color);
+
+    // Render Text
     window.add_group(grow_rectangle);
     window.fill_rectangle(color);
 
     window.add_group(grow_rectangle);
+    to_char(string, id);
     if (window.text_button(string.data())) {
       logger::info("Pressed %d", id);
     }
   }
   window.end_group();
-}
-
-void render_group(
-    Window& window, i32& id, std::array<c8, 10>& string, rgba8 color
-) {
-  window.start_column(sizes.data(), sizes.size());
-  for (i32 i = 0; i < 2; ++i) {
-    window.start_row(sizes.data(), sizes.size());
-    {
-      render_id(window, id, string, color);
-      render_id(window, id, string, color);
-    }
-    window.end_row();
-  }
-  window.end_column();
 }
 
 } // namespace
@@ -98,43 +84,43 @@ i32 main() noexcept {
     while (window.start()) {
       id = 0;
       window.set_anchor(Alignment::HORIZONTAL_LEFT | Alignment::VERTICAL_TOP);
-      render_group(window, id, string, colors[0]);
+      render_group(window, ++id, string, colors[0]);
 
       window.set_anchor(Alignment::HORIZONTAL_CENTER | Alignment::VERTICAL_TOP);
-      render_group(window, id, string, colors[1]);
+      render_group(window, ++id, string, colors[1]);
 
       window.set_anchor(Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_TOP);
-      render_group(window, id, string, colors[2]);
+      render_group(window, ++id, string, colors[2]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_LEFT | Alignment::VERTICAL_CENTER
       );
-      render_group(window, id, string, colors[3]);
+      render_group(window, ++id, string, colors[3]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_CENTER | Alignment::VERTICAL_CENTER
       );
-      render_group(window, id, string, colors[4]);
+      render_group(window, ++id, string, colors[4]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_CENTER
       );
-      render_group(window, id, string, colors[5]);
+      render_group(window, ++id, string, colors[5]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_LEFT | Alignment::VERTICAL_BOTTOM
       );
-      render_group(window, id, string, colors[6]);
+      render_group(window, ++id, string, colors[6]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_CENTER | Alignment::VERTICAL_BOTTOM
       );
-      render_group(window, id, string, colors[7]);
+      render_group(window, ++id, string, colors[7]);
 
       window.set_anchor(
           Alignment::HORIZONTAL_RIGHT | Alignment::VERTICAL_BOTTOM
       );
-      render_group(window, id, string, colors[8]);
+      render_group(window, ++id, string, colors[8]);
 
       window.end();
     }

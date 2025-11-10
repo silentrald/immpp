@@ -2,6 +2,7 @@
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include "ds/vector.hpp"
+#include "immpp/size.hpp"
 #include "immpp/types.hpp"
 
 namespace immpp {
@@ -116,7 +117,7 @@ public:
   void start_column(const ds::vector<i32>& heights) noexcept;
   void end_column() noexcept;
 
-  void start_group() noexcept;
+  void start_group(vec2<i32> size = {size::GROW_I32, size::GROW_I32}) noexcept;
   void add_group(const rect<f32>& rectangle) noexcept;
   void end_group() noexcept;
 

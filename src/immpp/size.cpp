@@ -41,7 +41,7 @@ bool size::is_fit(immpp::f32 size) noexcept {
   return ((*(i32*)&size) & 0xC000'0000) == 0xC000'0000;
 }
 
-bool size::is_stretch(immpp::f32 size) noexcept {
+bool size::is_grow(immpp::f32 size) noexcept {
   return ((*(i32*)&size) & 0xA000'0000) == 0xA000'0000;
 }
 
